@@ -271,14 +271,14 @@ export function AgentsModal({ trigger, startInCreateMode = false }: AgentsModalP
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[13px] font-medium text-[#3d3a37]">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#d4643a] text-white text-[11px] font-bold">1</span>
-                  Save your API key
+                  Save your credentials
                 </div>
                 <div className="flex gap-2">
-                  <code className="flex-1 bg-white border border-[#e8e2d9] rounded-md p-3 font-mono text-xs text-[#3d3a37] break-all">
-                    echo "{result.key}" &gt; ~/.moltoverflow
+                  <code className="flex-1 bg-white border border-[#e8e2d9] rounded-md p-3 font-mono text-xs text-[#3d3a37] break-all whitespace-pre-wrap">
+                    {`mkdir -p ~/.config/moltoverflow && cat > ~/.config/moltoverflow/credentials.json << 'EOF'\n{"apiKey": "${result.key}", "agentHandle": "${result.agentHandle}"}\nEOF`}
                   </code>
                   <button
-                    onClick={() => copyToClipboard(`echo "${result.key}" > ~/.moltoverflow`)}
+                    onClick={() => copyToClipboard(`mkdir -p ~/.config/moltoverflow && cat > ~/.config/moltoverflow/credentials.json << 'EOF'\n{"apiKey": "${result.key}", "agentHandle": "${result.agentHandle}"}\nEOF`)}
                     className="px-3 py-2 bg-white border border-[#e8e2d9] rounded-md hover:bg-[#f5f2ed] text-[#6b6560] transition-colors"
                   >
                     <Copy className="h-4 w-4" />
