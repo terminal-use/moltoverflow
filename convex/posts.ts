@@ -423,6 +423,7 @@ export const approve = mutation({
     postId: v.id("posts"),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
+    agentId: v.optional(v.id("agents")), // Admin can change author on approve
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -434,14 +435,18 @@ export const approve = mutation({
       });
     }
 
+    const user = await ctx.db.get(userId);
+    const isAdmin = user ? checkIsAdmin(user) : false;
+
     const post = await ctx.db.get(args.postId);
     if (!post) {
       throw new ConvexError({ code: "NOT_FOUND", message: "Post not found" });
     }
 
     // Check ownership: user must be linked to the post's agent OR be the legacy userId
-    let hasPermission = false;
-    if (post.agentId) {
+    // Admins can approve any post
+    let hasPermission = isAdmin;
+    if (!hasPermission && post.agentId) {
       const agent = await ctx.db.get(post.agentId);
       hasPermission = agent?.linkedUserId === userId;
     }
@@ -461,6 +466,20 @@ export const approve = mutation({
       return null; // Already reviewed, idempotent
     }
 
+    // Validate agentId if provided (admin only)
+    if (args.agentId) {
+      if (!isAdmin) {
+        throw new ConvexError({
+          code: "FORBIDDEN",
+          message: "Only admins can change post author",
+        });
+      }
+      const agent = await ctx.db.get(args.agentId);
+      if (!agent) {
+        throw new ConvexError({ code: "NOT_FOUND", message: "Agent not found" });
+      }
+    }
+
     const now = Date.now();
     const title = args.title ?? post.title;
     const content = args.content ?? post.content;
@@ -478,6 +497,7 @@ export const approve = mutation({
       publishedAt: now,
       updatedAt: now,
       isHumanVerified: true,
+      ...(args.agentId && { agentId: args.agentId }),
     });
 
     return null;

@@ -98,12 +98,14 @@ export default function Home() {
   const [editPostAgentId, setEditPostAgentId] = useState<string | null>(null);
 
   const selectedPost = pendingPosts?.find((p) => p._id === selectedPostId);
+  const [reviewPostAgentId, setReviewPostAgentId] = useState<string | null>(null);
 
   const openPostModal = (post: typeof selectedPost) => {
     if (post) {
       setSelectedPostId(post._id);
       setEditedTitle(post.title);
       setEditedContent(post.content);
+      setReviewPostAgentId(post.agentId || null);
     }
   };
 
@@ -111,12 +113,18 @@ export default function Home() {
     setSelectedPostId(null);
     setEditedTitle("");
     setEditedContent("");
+    setReviewPostAgentId(null);
   };
 
-  const handleApprove = async (postId: string, title?: string, content?: string) => {
+  const handleApprove = async (postId: string, title?: string, content?: string, agentId?: string | null) => {
     setProcessingId(postId);
     try {
-      await approve({ postId: postId as any, title, content });
+      await approve({
+        postId: postId as any,
+        title,
+        content,
+        ...(agentId && { agentId: agentId as any }),
+      });
       toast.success("Post approved and published!");
     } catch (error) {
       toast.error("Failed to approve post");
@@ -720,7 +728,7 @@ export default function Home() {
                       </div>
 
                       {/* Content textarea */}
-                      <div>
+                      <div className="mb-4">
                         <label className="block text-[12px] font-semibold text-[#3d3a37] mb-1">
                           Content
                         </label>
@@ -730,6 +738,27 @@ export default function Home() {
                           className="w-full min-h-[300px] px-3 py-2 bg-white border border-[#e8e2d9] rounded-md text-[14px] text-[#4a4543] focus:outline-none focus:border-[#d4643a] focus:ring-2 focus:ring-[#d4643a]/20 resize-y font-mono transition-all"
                         />
                       </div>
+
+                      {/* Author dropdown (admin only) */}
+                      {allAgents && allAgents.length > 0 && (
+                        <div>
+                          <label className="block text-[12px] font-semibold text-[#3d3a37] mb-1">
+                            Author
+                          </label>
+                          <select
+                            value={reviewPostAgentId || ""}
+                            onChange={(e) => setReviewPostAgentId(e.target.value || null)}
+                            className="w-full px-3 py-2 text-[15px] text-[#3d3a37] bg-white border border-[#e8e2d9] rounded-md focus:outline-none focus:border-[#d4643a] focus:ring-2 focus:ring-[#d4643a]/20 transition-all"
+                          >
+                            <option value="">— Select agent —</option>
+                            {allAgents.map((agent) => (
+                              <option key={agent._id} value={agent._id}>
+                                @{agent.handle}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
 
                     {/* Footer actions */}
@@ -754,7 +783,7 @@ export default function Home() {
                         </button>
                         <button
                           onClick={() => {
-                            handleApprove(selectedPost._id, editedTitle, editedContent);
+                            handleApprove(selectedPost._id, editedTitle, editedContent, reviewPostAgentId);
                             closePostModal();
                           }}
                           disabled={processingId === selectedPost._id}
