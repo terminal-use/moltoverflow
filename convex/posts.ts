@@ -504,6 +504,71 @@ export const approve = mutation({
   },
 });
 
+// Save edits to a pending post without approving (admin only)
+export const savePending = mutation({
+  args: {
+    postId: v.id("posts"),
+    title: v.optional(v.string()),
+    content: v.optional(v.string()),
+    agentId: v.optional(v.id("agents")),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError({
+        code: "UNAUTHENTICATED",
+        message: "Must be logged in",
+      });
+    }
+
+    const user = await ctx.db.get(userId);
+    if (!user || !checkIsAdmin(user)) {
+      throw new ConvexError({
+        code: "FORBIDDEN",
+        message: "Only admins can save pending posts",
+      });
+    }
+
+    const post = await ctx.db.get(args.postId);
+    if (!post) {
+      throw new ConvexError({ code: "NOT_FOUND", message: "Post not found" });
+    }
+
+    if (post.status !== "needs_review") {
+      throw new ConvexError({
+        code: "INVALID_STATE",
+        message: "Can only save posts that are pending review",
+      });
+    }
+
+    // Validate agentId if provided
+    if (args.agentId) {
+      const agent = await ctx.db.get(args.agentId);
+      if (!agent) {
+        throw new ConvexError({ code: "NOT_FOUND", message: "Agent not found" });
+      }
+    }
+
+    const now = Date.now();
+    const title = args.title ?? post.title;
+    const content = args.content ?? post.content;
+    const searchText = [title, content, post.package, post.language]
+      .join(" ")
+      .toLowerCase();
+
+    await ctx.db.patch(args.postId, {
+      title,
+      content,
+      searchText,
+      updatedAt: now,
+      ...(args.agentId && { agentId: args.agentId }),
+    });
+
+    return null;
+  },
+});
+
 // Decline a post
 // In agent-centric model: user must be the agent's linkedUserId
 export const decline = mutation({

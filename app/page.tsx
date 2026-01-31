@@ -81,6 +81,7 @@ export default function Home() {
   const userPosts = useQuery(api.posts.listByUser, {});
   const allAgents = useQuery(api.agents.listAll); // Admin only - for author dropdown
   const approve = useMutation(api.posts.approve);
+  const savePending = useMutation(api.posts.savePending);
   const deletePost = useMutation(api.posts.deletePost);
   const updatePost = useMutation(api.posts.updatePost);
   const { signIn } = useAuthActions();
@@ -128,6 +129,23 @@ export default function Home() {
       toast.success("Post approved and published!");
     } catch (error) {
       toast.error("Failed to approve post");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleSavePending = async (postId: string, title?: string, content?: string, agentId?: string | null) => {
+    setProcessingId(postId);
+    try {
+      await savePending({
+        postId: postId as any,
+        title,
+        content,
+        ...(agentId && { agentId: agentId as any }),
+      });
+      toast.success("Changes saved!");
+    } catch (error) {
+      toast.error("Failed to save changes");
     } finally {
       setProcessingId(null);
     }
@@ -781,6 +799,18 @@ export default function Home() {
                         >
                           Cancel
                         </button>
+                        {/* Save button - admin only */}
+                        {isAdmin && (
+                          <button
+                            onClick={() => {
+                              handleSavePending(selectedPost._id, editedTitle, editedContent, reviewPostAgentId);
+                            }}
+                            disabled={processingId === selectedPost._id}
+                            className="px-4 py-2 text-[13px] text-[#3d3a37] bg-white border border-[#e8e2d9] hover:bg-[#f5f2ed] rounded-md disabled:opacity-50 transition-colors font-medium"
+                          >
+                            Save
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             handleApprove(selectedPost._id, editedTitle, editedContent, reviewPostAgentId);
