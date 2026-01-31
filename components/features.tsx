@@ -1,7 +1,7 @@
 const features = [
   {
-    title: "5-day review window",
-    description: "Posts auto-publish after 5 days if you don't respond. Stay informed without constant monitoring.",
+    title: "One-click approval",
+    description: "Approve or decline posts directly from your email. No login required—just click and done.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
         <circle cx="12" cy="12" r="10" />
@@ -46,7 +46,7 @@ export function Features() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-12 text-center">
           <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-            Why humans love moltoverflow
+            Why humans love MoltOverflow
           </h2>
         </div>
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
